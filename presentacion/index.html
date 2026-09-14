@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automatizar el Proceso Productivo — OregonFoods</title>
+<style>
+  :root{
+    --ink:#132420;
+    --muted:#5b6b64;
+    --paper:#ffffff;
+    --panel:#eef4f1;
+    --line:#e1e8e4;
+
+    --deep-1:#08201c;
+    --deep-2:#0f3b30;
+    --deep-3:#1c6b52;
+    --deep-4:#2f9e73;
+
+    --gold:#c8842b;
+    --gold-bg:#fbf0dd;
+    --gold-ink:#8a5a15;
+
+    --teal:#0f766e;
+    --teal-bg:#e1f3f0;
+
+    --red:#b91c1c;
+    --red-bg:#fbe7e6;
+
+    --blue:#1d4ed8;
+    --blue-bg:#e8edfc;
+
+    --slate-bg:#eef1f4;
+
+    --pending:#9aa39d;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:#0a1a16;
+    overflow:hidden;
+    font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--ink);
+  }
+
+  #stage{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #canvas{
+    width:1280px; height:720px;
+    position:relative;
+    transform-origin:center center;
+    box-shadow:0 30px 80px rgba(0,0,0,.45);
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--paper);
+  }
+
+  .slide{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column;
+  }
+  .slide.active{ display:flex; }
+
+  h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; margin:0; font-weight:400; }
+
+  /* ---------- Portada ---------- */
+  .slide-cover{
+    background:linear-gradient(135deg, #061512 0%, var(--deep-2) 45%, var(--deep-4) 100%);
+    color:#f2f7f4;
+    padding:70px 90px;
+    justify-content:center;
+  }
+  .kicker{
+    font-size:12px; letter-spacing:3px; font-weight:700; text-transform:uppercase;
+    color:#a9d9c4; margin-bottom:18px;
+  }
+  .slide-cover h1{ font-size:46px; line-height:1.15; color:#ffffff; max-width:980px; }
+  .slide-cover .subtitle{
+    font-style:italic; font-size:19px; color:#d7ece3; margin-top:20px; max-width:760px; line-height:1.5;
+  }
+  .slide-cover .disclaimer{
+    font-size:13px; color:#9fc2b3; margin-top:34px; max-width:820px; line-height:1.6;
+  }
+  .meta-row{
+    margin-top:30px; display:flex; gap:28px; font-size:13px; color:#cdeadd;
+  }
+  .meta-row b{ color:#fff; font-weight:600; }
+  .integrantes{ margin-top:26px; }
+  .integrantes-title{ font-size:11px; letter-spacing:2.5px; font-weight:700; text-transform:uppercase; color:#a9d9c4; margin-bottom:10px; }
+  .integrantes-grid{ display:grid; grid-template-columns:1fr 1fr; gap:6px 50px; font-size:13.5px; color:#e3f2ea; max-width:560px; }
+  .integrantes-grid div{ line-height:1.6; }
+  .dots-deco{ position:absolute; left:90px; bottom:60px; display:flex; gap:10px; }
+  .dots-deco span{ width:7px; height:7px; border-radius:50%; background:#5f9784; }
+
+  /* ---------- Agenda ---------- */
+  .slide-agenda{ padding:56px 64px; }
+  .agenda-kicker{ font-size:12px; letter-spacing:2.5px; font-weight:700; color:var(--deep-3); text-transform:uppercase; }
+  .agenda-title{ font-size:32px; color:#0e2a22; margin-top:10px; }
+  .agenda-grid{
+    margin-top:34px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px;
+  }
+  .agenda-card{
+    background:var(--panel); border-radius:10px; padding:18px 20px 20px;
+  }
+  .agenda-card-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .agenda-icon{ font-size:20px; line-height:1; }
+  .agenda-num{
+    width:30px; height:30px; border-radius:50%; background:var(--deep-3); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;
+  }
+  .agenda-card h3{ font-family:inherit; font-size:15px; font-weight:700; color:#12271f; }
+  .agenda-card p{ font-size:12.5px; color:var(--muted); margin:6px 0 0; line-height:1.5; }
+  .agenda-card.centered{ grid-column:2; }
+
+  /* ---------- Slide de transición de sección ---------- */
+  .slide-section{ flex-direction:row; }
+  .side-rail{
+    width:180px; flex:0 0 180px;
+    background:linear-gradient(180deg, #04120f 0%, var(--deep-2) 55%, var(--deep-4) 100%);
+    position:relative;
+  }
+  .side-rail .rail-dots{
+    position:absolute; left:34px; bottom:40px;
+    display:grid; grid-template-columns:repeat(2,1fr); gap:7px;
+  }
+  .side-rail .rail-dots span{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.35); }
+  .section-body{ flex:1; padding:54px 60px; display:flex; flex-direction:column; }
+  .eyebrow{ font-size:11.5px; letter-spacing:2px; font-weight:700; color:var(--deep-3); text-transform:uppercase; }
+  .section-body h2{ font-size:34px; color:#0e2a22; margin-top:14px; }
+  .section-body .lead{ font-style:italic; font-size:16.5px; color:#44554e; margin-top:18px; max-width:760px; line-height:1.6; }
+  .section-icon{ font-size:52px; margin-top:22px; line-height:1; }
+  .section-stats{ display:flex; gap:16px; margin-top:26px; }
+  .stat-chip{ background:var(--panel); border-radius:10px; padding:12px 20px; }
+  .stat-chip .stat-num{ font-size:22px; font-weight:800; color:var(--deep-3); line-height:1.1; }
+  .stat-chip .stat-label{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .stat-list{ background:var(--panel); border-radius:10px; padding:12px 20px; }
+  .stat-list-title{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+  .stat-list-grid{ display:grid; grid-template-columns:1fr 1fr; gap:5px 26px; font-size:13.5px; color:#243b34; font-weight:600; }
+  .progress-dots{ display:flex; gap:9px; margin-top:auto; padding-top:30px; }
+  .progress-dots span{ width:11px; height:11px; border-radius:50%; background:#dcdfde; }
+  .progress-dots span.done{ background:var(--deep-3); }
+
+  /* ---------- Slide de contenido ---------- */
+  .content-body{ flex:1; padding:30px 56px 18px; display:flex; flex-direction:column; overflow:hidden; }
+  .content-eyebrow{ font-size:11px; letter-spacing:2px; font-weight:700; color:var(--deep-3); text-transform:uppercase; }
+  .content-body h2{ font-size:23px; color:#0e2a22; margin-top:5px; }
+  .content-canvas{ margin-top:12px; flex:1; min-height:0; display:flex; flex-direction:column; }
+
+  .why-banner{
+    background:linear-gradient(90deg,#0d1f1a,#173f33);
+    color:#fff; font-size:12.5px; font-weight:600; line-height:1.4;
+    padding:9px 16px; border-radius:7px; margin-bottom:10px; flex:0 0 auto;
+  }
+  .why-banner.compact{ padding:6px 14px; font-size:11px; margin-bottom:6px; }
+
+  .content-body.tight{ padding:16px 44px 8px; }
+  .content-body.tight h2{ margin-top:2px; font-size:20px; }
+  .content-body.tight .content-canvas{ margin-top:8px; }
+
+  .placeholder{
+    flex:1; border:2px dashed var(--pending); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;
+    color:#7d8983; background:#fafcfb; text-align:center; padding:30px;
+  }
+  .placeholder .pin{ font-size:26px; }
+  .placeholder h4{ margin:0; font-size:15px; color:#4c5a54; font-weight:700; }
+  .placeholder p{ margin:0; font-size:12.5px; max-width:560px; line-height:1.6; }
+
+  /* ---------- Impact Map (árbol de conectores) ---------- */
+  .imap{ position:relative; display:flex; align-items:stretch; flex:1; min-height:0; gap:22px; }
+  .tree-svg{ position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+  .tree-line{ fill:none; stroke:#b9c0bc; stroke-width:1.5; }
+  .imap-actors{ flex:1; display:flex; flex-direction:column; justify-content:space-between; position:relative; z-index:2; }
+  .imap-group{ display:flex; align-items:center; gap:16px; }
+  .imap-rows{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:5px; }
+  .imap-row{ display:flex; align-items:center; gap:12px; }
+
+  .node{ position:relative; z-index:2; border-radius:8px; padding:8px 13px; font-size:14.5px; line-height:1.2; }
+  .node-root{ flex:0 0 138px; align-self:center; background:#d9472b; color:#fff; font-weight:800; font-size:16.5px; text-align:center; display:flex; align-items:center; justify-content:center; padding:16px 12px; border-radius:11px; }
+  .node-actor{ flex:0 0 116px; color:#fff; font-weight:700; font-size:15px; text-align:center; display:flex; align-items:center; justify-content:center; padding:12px 8px; }
+  .imap-row .node:nth-child(1){ flex:0 0 275px; }
+  .imap-row .node:nth-child(2){ flex:1; min-width:0; }
+
+  .amber-solid{ background:#e8952c; } .amber-tint{ background:#fdf1de; color:#4a3512; } .amber-strong{ background:#fbe4bd; color:#a5620c; font-weight:700; }
+  .teal-solid{ background:#1f7a6c; } .teal-tint{ background:#e1f4f0; color:#153f37; } .teal-strong{ background:#e1f4f0; color:#0f6e5f; font-weight:700; }
+  .pink-solid{ background:#c62b9f; } .pink-tint{ background:#fbe1f5; color:#551a45; } .pink-strong{ background:#fbe1f5; color:#a3227f; font-weight:700; }
+  .indigo-solid{ background:#4c4fc4; } .indigo-tint{ background:#e6e4fb; color:#2b2a70; } .indigo-strong{ background:#e6e4fb; color:#3d3fb0; font-weight:700; }
+
+  /* ---------- User Story Map ---------- */
+  .usm-grid{ display:grid; grid-auto-flow:column; grid-template-rows:auto 1fr 1fr 1fr; grid-template-columns:repeat(7,1fr); gap:8px; height:100%; }
+  .usm-head{ background:var(--deep-3); color:#fff; font-size:13.5px; font-weight:700; text-align:center; padding:10px 6px; border-radius:7px; line-height:1.28; text-transform:uppercase; letter-spacing:.2px; display:flex; align-items:center; justify-content:center; }
+  .usm-card{ background:#fff; border:1px solid var(--line); border-radius:7px; padding:10px 9px; font-size:13px; line-height:1.3; color:#243b34; display:flex; align-items:center; justify-content:center; text-align:center; }
+  .usm-card.usm-empty{ background:transparent; border:1px dashed #e6eae7; }
+
+  /* ---------- Product Backlog (MoSCoW) ---------- */
+  .pb-wrap{ display:flex; flex-direction:column; gap:8px; height:100%; }
+  .pb-lane{ display:flex; align-items:center; gap:14px; border-radius:9px; padding:10px 16px; flex:1; min-height:0; }
+  .pb-lane-label{ flex:0 0 78px; display:flex; align-items:center; gap:7px; font-size:14px; font-weight:700; color:#2a352f; }
+  .pb-badge{ width:23px; height:23px; border-radius:50%; color:#fff; font-size:12.5px; display:flex; align-items:center; justify-content:center; font-weight:800; flex:0 0 23px; }
+  .pb-chips{ flex:1; display:flex; flex-wrap:wrap; gap:6px; align-content:center; }
+  .pb-chip{ background:#fff; border:1px solid var(--line); border-radius:7px; padding:6px 11px; font-size:12.5px; line-height:1.28; flex:0 1 auto; max-width:280px; color:#243b34; }
+  .pb-chip b{ margin-right:4px; opacity:.55; font-weight:700; }
+
+  .pb-must{ background:var(--red-bg); flex:2.2; } .pb-must .pb-badge{ background:var(--red); }
+  .pb-should{ background:var(--gold-bg); flex:2.4; } .pb-should .pb-badge{ background:var(--gold); }
+  .pb-could{ background:var(--teal-bg); flex:1.6; } .pb-could .pb-badge{ background:var(--teal); }
+  .pb-wont{ background:var(--slate-bg); flex:0.8; min-height:52px; } .pb-wont .pb-badge{ background:#7c8a83; }
+
+  /* ---------- Sprint Backlog ---------- */
+  .sb-grid{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:9px; flex:1; min-height:0; }
+  .sb-card{ background:var(--panel); border-radius:9px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; min-height:0; }
+  .sb-card-head{ display:flex; align-items:flex-start; gap:7px; }
+  .sb-badge{ width:22px; height:22px; border-radius:50%; background:var(--red); color:#fff; font-size:11.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 22px; margin-top:1px; }
+  .sb-card h4{ font-size:14.5px; font-weight:700; color:#16241f; margin:0; line-height:1.26; }
+  .sb-tasks{ display:flex; flex-direction:column; gap:5px; }
+  .sb-task{ display:flex; gap:7px; align-items:flex-start; font-size:12.5px; line-height:1.3; color:#3a4a44; }
+  .sb-task .chk{ width:10.5px; height:10.5px; border:1.5px solid #9fb3ab; border-radius:2px; flex:0 0 10.5px; margin-top:2.5px; }
+
+  /* ---------- Cómo usamos IA ---------- */
+  .ai-flow{ display:flex; align-items:stretch; gap:16px; height:100%; }
+  .ai-panel{ flex:1; display:flex; flex-direction:column; min-height:0; min-width:0; }
+  .ai-panel-title{ font-size:13.5px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; color:#2a352f; display:flex; align-items:center; gap:6px; }
+  .ai-prompt-box{ flex:1; min-height:0; background:#0d1f1a; color:#d7ece3; border-radius:10px; padding:16px 20px; font-family:'Courier New',monospace; font-size:13px; line-height:1.55; overflow:auto; white-space:pre-wrap; }
+  .ai-prompt-box .ai-h{ color:#8fd6b8; font-weight:700; }
+  .ai-result-box{ flex:1; min-height:0; background:var(--panel); border-radius:10px; padding:18px 20px; display:flex; flex-direction:column; gap:12px; overflow:auto; }
+  .ai-usr-story{ font-size:15.5px; line-height:1.6; color:#243b34; }
+  .ai-usr-story b{ color:var(--deep-3); }
+  .ai-criteria{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+  .ai-criteria-item{ background:#fff; border:1px solid var(--line); border-radius:7px; padding:10px 12px; font-size:13.5px; line-height:1.42; color:#3a4a44; }
+  .ai-arrow{ flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--deep-3); }
+
+  /* ---------- Prototipo del incremento (2 por slide) ---------- */
+  .proto-pager{ font-size:11px; font-weight:700; color:var(--deep-3); background:var(--panel); border-radius:20px; padding:4px 12px; display:inline-flex; margin-left:10px; vertical-align:middle; }
+  .proto-pair{ display:flex; gap:44px; align-items:stretch; justify-content:center; height:100%; }
+  .proto-pair-item{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:10px; min-height:0; height:100%; }
+  .proto-pair-item .proto-frame{ flex:1; width:100%; min-height:0; min-width:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .proto-pair-item .proto-frame img{ max-height:100%; max-width:100%; width:auto; height:auto; object-fit:contain; border-radius:16px; }
+  .proto-pair-item .proto-label{ font-size:13.5px; font-weight:600; color:#1c2e28; text-align:center; max-width:340px; }
+  .proto-pair-item .proto-placeholder{ width:100%; height:100%; border:2px dashed var(--pending); border-radius:14px; display:flex; align-items:center; justify-content:center; color:#b7bfba; font-size:26px; background:#fafcfb; }
+
+  /* ---------- Checklist ---------- */
+  .slide-plain{ padding:56px 64px; }
+  .check-list{ margin-top:30px; display:flex; flex-direction:column; gap:14px; }
+  .check-item{
+    background:var(--panel); border-radius:9px; padding:16px 20px; display:flex; gap:14px; align-items:flex-start; font-size:14.5px;
+  }
+  .box{ width:18px; height:18px; border:2px solid #9fb3ab; border-radius:4px; flex:0 0 18px; margin-top:1px; }
+
+  /* ---------- Gracias ---------- */
+  .slide-thanks{
+    background:linear-gradient(135deg, #061512 0%, var(--deep-2) 45%, var(--deep-4) 100%);
+    justify-content:center; padding:70px 90px;
+  }
+  .slide-thanks h1{ color:#fff; font-size:44px; }
+
+  /* ---------- Controles ---------- */
+  .nav-btn{
+    position:fixed; top:50%; transform:translateY(-50%);
+    width:44px; height:44px; border-radius:50%; border:none;
+    background:rgba(255,255,255,.12); color:#fff; font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(4px);
+  }
+  .nav-btn:hover{ background:rgba(255,255,255,.22); }
+  #prevBtn{ left:24px; } #nextBtn{ right:24px; }
+
+  #footerBar{
+    position:fixed; left:0; right:0; bottom:16px;
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    color:#dfeae5; font-size:12px; font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  #dotsNav{ display:flex; gap:6px; }
+  #dotsNav button{
+    width:8px; height:8px; border-radius:50%; border:none; padding:0; cursor:pointer;
+    background:rgba(255,255,255,.3);
+  }
+  #dotsNav button.active{ background:#fff; }
+  #counter{ min-width:52px; text-align:center; opacity:.85; }
+
+  @media (max-width: 480px){
+    .nav-btn{ width:36px; height:36px; font-size:15px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="canvas">
+
+    <!-- 1. PORTADA -->
+    <section class="slide slide-cover active">
+      <div class="kicker">Proyecto Final</div>
+      <h1>Automatizar el Proceso Productivo De Orden Producción de OregonFoods</h1>
+      <p class="subtitle">Automatizar el flujo para reducir los tiempos de ciclo, minimizar errores manuales y optimizar el uso de insumos en Oregón Foods.</p>
+      <div class="meta-row">
+        <div><b>Curso:</b> Metodologías Ágiles – Scrum</div>
+        <div><b>Profesor:</b> Harold Alejandría</div>
+        <div><b>Equipo:</b> Grupo 5</div>
+      </div>
+      <div class="integrantes">
+        <div class="integrantes-title">Integrantes</div>
+        <div class="integrantes-grid">
+          <div>García Zarate Marlon</div>
+          <div>Briones Villacorta Bryam</div>
+          <div>Roldán Silva Victor</div>
+          <div>Chavez Alvarado Sem</div>
+          <div>Salazar Espinoza Ronald</div>
+          <div>Belupú Sarmiento Jimmy</div>
+          <div>Barreto Urquiza Luis</div>
+          <div>Sosa Bellodas José</div>
+        </div>
+      </div>
+      <div class="dots-deco"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </section>
+
+    <!-- 2. AGENDA -->
+    <section class="slide slide-agenda">
+      <div class="agenda-kicker">Estructura del caso</div>
+      <h2 class="agenda-title">Recorremos las 7 secciones del proyecto final</h2>
+      <div class="agenda-grid">
+        <div class="agenda-card"><div class="agenda-card-head"><div class="agenda-num">1</div><span class="agenda-icon">🎯</span></div><h3>Impact Map</h3><p>Objetivo de negocio, actores y épicas.</p></div>
+        <div class="agenda-card"><div class="agenda-card-head"><div class="agenda-num">2</div><span class="agenda-icon">🧩</span></div><h3>User Story Map</h3><p>Épicas desagregadas en historias, con MVP.</p></div>
+        <div class="agenda-card"><div class="agenda-card-head"><div class="agenda-num">3</div><span class="agenda-icon">📋</span></div><h3>Product Backlog</h3><p>Historias priorizadas con MoSCoW.</p></div>
+        <div class="agenda-card"><div class="agenda-card-head"><div class="agenda-num">4</div><span class="agenda-icon">🏁</span></div><h3>Sprint Backlog (Sprint 1)</h3><p>Historias seleccionadas + tareas técnicas.</p></div>
+        <div class="agenda-card"><div class="agenda-card-head"><div class="agenda-num">5</div><span class="agenda-icon">🖥️</span></div><h3>Prototipo del incremento</h3><p>Wireframes / mockups de las pantallas del Sprint 1.</p></div>
+        <div class="agenda-card"><div class="agenda-card-head"><div class="agenda-num">6</div><span class="agenda-icon">🤖</span></div><h3>Cómo usamos IA en el proceso</h3><p>El prompt usado para generar una historia de usuario con criterios de aceptación.</p></div>
+        <div class="agenda-card centered"><div class="agenda-card-head"><div class="agenda-num">7</div><span class="agenda-icon">🎤</span></div><h3>Conclusiones</h3><p>Decisiones, aprendizajes y próximos pasos.</p></div>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN 1: IMPACT MAP ============ -->
+    <section class="slide slide-section" data-section="1">
+      <div class="side-rail"><div class="rail-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="section-body">
+        <div class="eyebrow">Sección 1 de 7 · Ejemplo de proyecto real</div>
+        <h2>Impact Map</h2>
+        <div class="section-icon">🎯</div>
+        <p class="lead">Partimos de un objetivo de negocio medible: automatizar el flujo de producción para reducir los tiempos de ciclo, minimizar errores manuales y optimizar el uso de insumos en Oregón Foods.</p>
+        <div class="section-stats">
+          <div class="stat-list">
+            <div class="stat-list-title">4 actores del proceso</div>
+            <div class="stat-list-grid">
+              <div>Planificador</div>
+              <div>Calidad</div>
+              <div>Operario</div>
+              <div>Jefe de Producción</div>
+            </div>
+          </div>
+          <div class="stat-list">
+            <div class="stat-list-title">9 módulos / épicas</div>
+            <div class="stat-list-grid">
+              <div>Recepción de solicitudes</div>
+              <div>Aprobación de masa</div>
+              <div>Planificación de batch</div>
+              <div>Aprobación de producto terminado</div>
+              <div>Registro de docimetría</div>
+              <div>Dashboard de rendimiento</div>
+              <div>Masa en proceso</div>
+              <div>Dashboard de merma</div>
+              <div>Registro de empaquetado</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-dots">
+          <span class="done"></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="1" data-tree="1">
+      <div class="content-body tight">
+        <div class="content-eyebrow">1. Impact Map</div>
+        <h2>Objetivo, actores y épicas</h2>
+        <div class="content-canvas">
+          <div class="why-banner compact"><b>WHY</b> — Automatizar el flujo para reducir los tiempos de ciclo, minimizar errores manuales y optimizar el uso de insumos en Oregón Foods.</div>
+          <div class="imap" id="imap-1">
+            <svg class="tree-svg" id="tree-svg-1"></svg>
+            <div class="node node-root" id="root1">AUTOMATIZAR EL PROCESO PRODUCTIVO DE OP DE OREGON FOODS</div>
+            <div class="imap-actors">
+
+              <div class="imap-group">
+                <div class="node node-actor amber-solid" id="a1">Planificador</div>
+                <div class="imap-rows">
+                  <div class="imap-row">
+                    <div class="node amber-tint" id="n1a">Recepcionar las solicitudes semanales</div>
+                    <div class="node amber-strong" id="m1a">Módulo para recepcionar las solicitudes semanales</div>
+                  </div>
+                  <div class="imap-row">
+                    <div class="node amber-tint" id="n1b">Planificar los batch a producir</div>
+                    <div class="node amber-strong" id="m1b">Módulo para planificar los batch a producir</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="imap-group">
+                <div class="node node-actor teal-solid" id="a2">Operario</div>
+                <div class="imap-rows">
+                  <div class="imap-row">
+                    <div class="node teal-tint" id="n2a">Registro de la docimetria</div>
+                    <div class="node teal-strong" id="m2a">Módulo para registrar la docimetria</div>
+                  </div>
+                  <div class="imap-row">
+                    <div class="node teal-tint" id="n2b">Registro la masa en proceso</div>
+                    <div class="node teal-strong" id="m2b">Módulo para la masa en proceso</div>
+                  </div>
+                  <div class="imap-row">
+                    <div class="node teal-tint" id="n2c">Registro del empaquetado (PT)</div>
+                    <div class="node teal-strong" id="m2c">Módulo para registrar el empaquetado (PT)</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="imap-group">
+                <div class="node node-actor pink-solid" id="a3">Calidad</div>
+                <div class="imap-rows">
+                  <div class="imap-row">
+                    <div class="node pink-tint" id="n3a">Validar la fabricación de la masa (producto en proceso)</div>
+                    <div class="node pink-strong" id="m3a">Módulo para aprobar la fabricación de la masa</div>
+                  </div>
+                  <div class="imap-row">
+                    <div class="node pink-tint" id="n3b">Validar la fabricación del producto terminado</div>
+                    <div class="node pink-strong" id="m3b">Módulo para aprobar la fabricación del producto terminado</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="imap-group">
+                <div class="node node-actor indigo-solid" id="a4">Jefe de Producción</div>
+                <div class="imap-rows">
+                  <div class="imap-row">
+                    <div class="node indigo-tint" id="n4a">Revisar el rendimiento del producto terminado</div>
+                    <div class="node indigo-strong" id="m4a">Dashboard de rendimiento del producto terminado</div>
+                  </div>
+                  <div class="imap-row">
+                    <div class="node indigo-tint" id="n4b">Revisar la merma del producto terminado</div>
+                    <div class="node indigo-strong" id="m4b">Dashboard de merma del producto terminado</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN 2: USER STORY MAP ============ -->
+    <section class="slide slide-section" data-section="2">
+      <div class="side-rail"><div class="rail-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="section-body">
+        <div class="eyebrow">Sección 2 de 7 · Ejemplo de proyecto real</div>
+        <h2>User Story Map</h2>
+        <div class="section-icon">🧩</div>
+        <p class="lead">Cada módulo del proceso productivo se convierte en una columna. Desagregamos las historias de planificación, producción, calidad y control, ordenadas por prioridad.</p>
+        <div class="section-stats">
+          <div class="stat-list">
+            <div class="stat-list-title">7 módulos (columnas)</div>
+            <div class="stat-list-grid">
+              <div>Recepción de solicitudes</div>
+              <div>Empaquetado</div>
+              <div>Planificación de batch</div>
+              <div>Aprobaciones</div>
+              <div>Docimetría</div>
+              <div>Dashboard</div>
+              <div>Masa en proceso</div>
+            </div>
+          </div>
+          <div class="stat-list">
+            <div class="stat-list-title">18 historias de usuario</div>
+            <div class="stat-list-grid">
+              <div>Recepción · 3</div>
+              <div>Empaquetado · 3</div>
+              <div>Planificación · 3</div>
+              <div>Aprobaciones · 2</div>
+              <div>Docimetría · 2</div>
+              <div>Dashboard · 2</div>
+              <div>Masa · 3</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-dots">
+          <span class="done"></span><span class="done"></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="2">
+      <div class="content-body tight">
+        <div class="content-eyebrow">2. User Story Map</div>
+        <h2>Los módulos desagregados en historias</h2>
+        <div class="content-canvas">
+          <div class="usm-grid">
+            <div class="usm-head">Módulo: Recepción de las solicitudes semanales</div>
+            <div class="usm-card">Registrar las Solicitud de Planificación</div>
+            <div class="usm-card">Listado de las Solicitudes de Planificación</div>
+            <div class="usm-card">Aprobar o Rechazar las Solicitudes de Planificación</div>
+
+            <div class="usm-head">Módulo: Planificación de los batch a producir</div>
+            <div class="usm-card">Listar las recetas del producto terminado que se va a producir</div>
+            <div class="usm-card">Registrar la planificación de los batch a producir</div>
+            <div class="usm-card">Aprobar o Rechazar la Planificación</div>
+
+            <div class="usm-head">Módulo: Docimetria</div>
+            <div class="usm-card">Registro de productos con el tipo de docimetría de forma automática, capturando los pesos desde una tablet conectada a una balanza</div>
+            <div class="usm-card">Registrar la producción de docimetría</div>
+            <div class="usm-card usm-empty"></div>
+
+            <div class="usm-head">Módulo: Masa en proceso</div>
+            <div class="usm-card">Registro de productos con el tipo de proceso de forma automática, capturando los pesos desde una tablet conectada a una balanza</div>
+            <div class="usm-card">Seleccionar los pesos registrados en docimetria</div>
+            <div class="usm-card">Registrar la producción de la masa</div>
+
+            <div class="usm-head">Módulo: Empaquetado</div>
+            <div class="usm-card">Registro de productos con el tipo de empaquetado de forma automática, capturando los pesos teóricos según la receta</div>
+            <div class="usm-card">Seleccionar la masa en proceso</div>
+            <div class="usm-card">Registrar la producción del producto terminado</div>
+
+            <div class="usm-head">Módulo: Aprobaciones</div>
+            <div class="usm-card">Aprobar o Rechazar la Masa en Proceso</div>
+            <div class="usm-card">Aprobar o Rechazar el Producto Terminado</div>
+            <div class="usm-card usm-empty"></div>
+
+            <div class="usm-head">Módulo: Dashboard</div>
+            <div class="usm-card">Crear un Dashboard en QlikSense para mostrar el rendimiento del Producto Terminado</div>
+            <div class="usm-card">Crear un Dashboard en QlikSense para mostrar la merma del Producto Terminado</div>
+            <div class="usm-card usm-empty"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN 3: PRODUCT BACKLOG ============ -->
+    <section class="slide slide-section" data-section="3">
+      <div class="side-rail"><div class="rail-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="section-body">
+        <div class="eyebrow">Sección 3 de 7 · Ejemplo de proyecto real</div>
+        <h2>Product Backlog</h2>
+        <div class="section-icon">📋</div>
+        <p class="lead">Con las 26 historias registradas en Jira, priorizamos con MoSCoW: qué habilita el flujo de producción de punta a punta y qué puede esperar.</p>
+        <div class="section-stats">
+          <div class="stat-list">
+            <div class="stat-list-title">26 historias · MoSCoW</div>
+            <div class="stat-list-grid">
+              <div>Must · 9</div>
+              <div>Could · 6</div>
+              <div>Should · 10</div>
+              <div>Won't · 1</div>
+            </div>
+          </div>
+          <div class="stat-list">
+            <div class="stat-list-title">9 Must (Sprint 1)</div>
+            <div class="stat-list-grid">
+              <div>Registrar Solicitud</div>
+              <div>Registrar producto terminado</div>
+              <div>Planificar batch</div>
+              <div>Aprobar masa</div>
+              <div>Aprobar Planificación</div>
+              <div>Aprobar producto terminado</div>
+              <div>Registrar dosimetría</div>
+              <div>Registro de pesos</div>
+              <div>Registrar masa</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-dots">
+          <span class="done"></span><span class="done"></span><span class="done"></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="3">
+      <div class="content-body tight">
+        <div class="content-eyebrow">3. Product Backlog</div>
+        <h2>Historias priorizadas con MoSCoW</h2>
+        <div class="content-canvas">
+          <div class="pb-wrap">
+
+            <div class="pb-lane pb-must">
+              <div class="pb-lane-label"><span class="pb-badge">M</span> Must</div>
+              <div class="pb-chips">
+                <div class="pb-chip"><b>1</b>Registrar la Solicitud de Planificación</div>
+                <div class="pb-chip"><b>6</b>Registrar la planificación de los batch a producir</div>
+                <div class="pb-chip"><b>7</b>Aprobar la Planificación</div>
+                <div class="pb-chip"><b>10</b>Registrar la producción de dosimetría</div>
+                <div class="pb-chip"><b>13</b>Registrar la producción de la masa</div>
+                <div class="pb-chip"><b>16</b>Registrar la producción del producto terminado</div>
+                <div class="pb-chip"><b>17</b>Aprobar la Masa en Proceso</div>
+                <div class="pb-chip"><b>19</b>Aprobar el Producto Terminado</div>
+                <div class="pb-chip"><b>27</b>Registro de pesos, automático (balanza) o manual</div>
+              </div>
+            </div>
+
+            <div class="pb-lane pb-should">
+              <div class="pb-lane-label"><span class="pb-badge">S</span> Should</div>
+              <div class="pb-chips">
+                <div class="pb-chip"><b>2</b>Listar las Solicitudes de Planificación</div>
+                <div class="pb-chip"><b>3</b>Aprobar las Solicitudes de Planificación</div>
+                <div class="pb-chip"><b>5</b>Listar las recetas del producto terminado que se va a producir</div>
+                <div class="pb-chip"><b>11</b>Registrar producto tipo proceso automático, capturando pesos desde tablet/balanza</div>
+                <div class="pb-chip"><b>12</b>Seleccionar los pesos registrados en dosimetría</div>
+                <div class="pb-chip"><b>14</b>Registrar producto tipo empaquetado automático, según receta</div>
+                <div class="pb-chip"><b>15</b>Seleccionar la masa en proceso</div>
+                <div class="pb-chip"><b>18</b>Rechazar la Masa en Proceso</div>
+                <div class="pb-chip"><b>20</b>Rechazar el Producto Terminado</div>
+                <div class="pb-chip"><b>25</b>Autorización para el ingreso de pesos manualmente (regla)</div>
+              </div>
+            </div>
+
+            <div class="pb-lane pb-could">
+              <div class="pb-lane-label"><span class="pb-badge">C</span> Could</div>
+              <div class="pb-chips">
+                <div class="pb-chip"><b>4</b>Rechazar las Solicitudes de Planificación</div>
+                <div class="pb-chip"><b>8</b>Rechazar la Planificación</div>
+                <div class="pb-chip"><b>21</b>Dashboard QlikSense — rendimiento del producto terminado</div>
+                <div class="pb-chip"><b>22</b>Dashboard QlikSense — merma del producto terminado</div>
+                <div class="pb-chip"><b>24</b>Listar productos de la familia de docimetría (dato)</div>
+                <div class="pb-chip"><b>28</b>Configuración de BT (spike técnico)</div>
+              </div>
+            </div>
+
+            <div class="pb-lane pb-wont">
+              <div class="pb-lane-label"><span class="pb-badge">W</span> Won't</div>
+              <div class="pb-chips">
+                <div class="pb-chip"><b>26</b>Aplicativo móvil (interfaz) — por ahora</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN 4: SPRINT BACKLOG ============ -->
+    <section class="slide slide-section" data-section="4">
+      <div class="side-rail"><div class="rail-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="section-body">
+        <div class="eyebrow">Sección 4 de 7 · Ejemplo de proyecto real</div>
+        <h2>Sprint Backlog (Sprint 1)</h2>
+        <div class="section-icon">🏁</div>
+        <p class="lead">De las 9 historias Must, seleccionamos el flujo completo de punta a punta: desde la solicitud comercial hasta la aprobación de calidad del producto terminado.</p>
+        <div class="section-stats">
+          <div class="stat-list">
+            <div class="stat-list-title">9 historias del sprint</div>
+            <div class="stat-list-grid">
+              <div>Registrar Solicitud</div>
+              <div>Registrar producto terminado</div>
+              <div>Planificar batch</div>
+              <div>Aprobar masa</div>
+              <div>Aprobar Planificación</div>
+              <div>Aprobar producto terminado</div>
+              <div>Registrar dosimetría</div>
+              <div>Registro de pesos</div>
+              <div>Registrar masa</div>
+            </div>
+          </div>
+          <div class="stat-list">
+            <div class="stat-list-title">27 tareas técnicas</div>
+            <div class="stat-list-grid">
+              <div>Planificación · 9</div>
+              <div>Calidad · 9</div>
+              <div>Producción · 9</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-dots">
+          <span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="4">
+      <div class="content-body tight">
+        <div class="content-eyebrow">4. Sprint Backlog</div>
+        <h2>Sprint 1 — Historias y tareas</h2>
+        <div class="content-canvas">
+          <div class="why-banner compact"><b>Sprint Goal</b> — Al finalizar el Sprint 1, comercial podrá registrar y aprobar la planificación semanal, y producción podrá ejecutar todo el flujo de dosimetría, masa y empaquetado, con captura de pesos (automática o manual) y aprobación de calidad en cada etapa.</div>
+          <div class="sb-grid">
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Registrar la Solicitud de Planificación</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Diseñar formulario de Registro de Planificación Semanal</div>
+                <div class="sb-task"><span class="chk"></span>Validar cantidades contra el stock disponible</div>
+                <div class="sb-task"><span class="chk"></span>Controlar visibilidad del botón según permisos</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Registrar la planificación de los batch a producir</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Diseñar formulario de planificación de batch</div>
+                <div class="sb-task"><span class="chk"></span>Vincular con el listado de recetas del producto terminado</div>
+                <div class="sb-task"><span class="chk"></span>Validar capacidad de producción disponible</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Aprobar la Planificación</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Diseñar pantalla de aprobación de planificación de batch</div>
+                <div class="sb-task"><span class="chk"></span>Validar permisos del rol Planificador</div>
+                <div class="sb-task"><span class="chk"></span>Notificar al operario al aprobar</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Registrar la producción de dosimetría</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Configurar conexión Bluetooth con la balanza</div>
+                <div class="sb-task"><span class="chk"></span>Capturar automáticamente los pesos de dosimetría</div>
+                <div class="sb-task"><span class="chk"></span>Validar variación contra la receta teórica</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Registrar la producción de la masa</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Diseñar formulario de registro de masa en proceso</div>
+                <div class="sb-task"><span class="chk"></span>Vincular con los pesos ya registrados en dosimetría</div>
+                <div class="sb-task"><span class="chk"></span>Calcular rendimiento teórico vs. real</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Registrar la producción del producto terminado</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Diseñar formulario de registro de empaquetado (PT)</div>
+                <div class="sb-task"><span class="chk"></span>Vincular con la masa en proceso seleccionada</div>
+                <div class="sb-task"><span class="chk"></span>Calcular merma preliminar</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Aprobar la Masa en Proceso</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Diseñar pantalla de aprobación de calidad para la masa</div>
+                <div class="sb-task"><span class="chk"></span>Implementar acción Aprobar / Rechazar con motivo</div>
+                <div class="sb-task"><span class="chk"></span>Bloquear avance a empaquetado si se rechaza</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Aprobar el Producto Terminado</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Diseñar pantalla de aprobación de calidad para el PT</div>
+                <div class="sb-task"><span class="chk"></span>Implementar acción Aprobar / Rechazar con motivo</div>
+                <div class="sb-task"><span class="chk"></span>Notificar al Jefe de Producción al aprobar</div>
+              </div>
+            </div>
+
+            <div class="sb-card">
+              <div class="sb-card-head"><span class="sb-badge">M</span><h4>Registro de pesos, automático o manual</h4></div>
+              <div class="sb-tasks">
+                <div class="sb-task"><span class="chk"></span>Implementar lectura de peso vía Bluetooth (balanza)</div>
+                <div class="sb-task"><span class="chk"></span>Diseñar fallback de ingreso manual con validación de permisos</div>
+                <div class="sb-task"><span class="chk"></span>Registrar el origen del dato (automático/manual) para trazabilidad</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN 5: PROTOTIPO ============ -->
+    <section class="slide slide-section" data-section="5">
+      <div class="side-rail"><div class="rail-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="section-body">
+        <div class="eyebrow">Sección 5 de 7 · Ejemplo de proyecto real</div>
+        <h2>Prototipo del incremento</h2>
+        <div class="section-icon">🖥️</div>
+        <p class="lead">El prototipo muestra el flujo clave del Sprint 1: registrar y aprobar la planificación, y el registro de producción (dosimetría y masa).</p>
+        <div class="section-stats">
+          <div class="stat-list">
+            <div class="stat-list-title">4 pantallas diseñadas</div>
+            <div class="stat-list-grid">
+              <div>Registrar Solicitud</div>
+              <div>Registrar dosimetría</div>
+              <div>Aprobar Planificación</div>
+              <div>Registrar masa</div>
+            </div>
+          </div>
+          <div class="stat-list">
+            <div class="stat-list-title">2 flujos clave</div>
+            <div class="stat-list-grid">
+              <div>Planificación</div>
+              <div>Producción</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-dots">
+          <span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="5">
+      <div class="content-body">
+        <div class="content-eyebrow">5. Prototipo del incremento <span class="proto-pager">1 / 2 · Planificación</span></div>
+        <h2>Pantallas del Sprint 1</h2>
+        <div class="content-canvas">
+          <div class="proto-pair">
+            <div class="proto-pair-item">
+              <div class="proto-frame"><img src="prototipo-planificacion.png" alt="Registrar Solicitud de Planificación"></div>
+              <div class="proto-label">Registrar la Solicitud de Planificación</div>
+            </div>
+            <div class="proto-pair-item">
+              <div class="proto-frame"><img src="prototipo-aprobaciones.png" alt="Aprobar la Planificación"></div>
+              <div class="proto-label">Aprobar la Planificación</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="5">
+      <div class="content-body">
+        <div class="content-eyebrow">5. Prototipo del incremento <span class="proto-pager">2 / 2 · Producción</span></div>
+        <h2>Pantallas del Sprint 1</h2>
+        <div class="content-canvas">
+          <div class="proto-pair">
+            <div class="proto-pair-item">
+              <div class="proto-frame"><img src="prototipo-dosimetria.png" alt="Registrar producción de dosimetría"></div>
+              <div class="proto-label">Registrar producción de dosimetría</div>
+            </div>
+            <div class="proto-pair-item">
+              <div class="proto-frame"><img src="prototipo-masa.png" alt="Registrar producción de la masa"></div>
+              <div class="proto-label">Registrar producción de la masa</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+
+    <!-- ============ SECCIÓN 6: CÓMO USAMOS IA ============ -->
+    <section class="slide slide-section" data-section="6">
+      <div class="side-rail"><div class="rail-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="section-body">
+        <div class="eyebrow">Sección 6 de 7 · Ejemplo de proyecto real</div>
+        <h2>Cómo usamos IA en el proceso</h2>
+        <div class="section-icon">🤖</div>
+        <p class="lead">Usamos IA generativa como herramienta de apoyo: a partir de un prompt con el rol, la funcionalidad y el usuario, generamos la historia con sus criterios de aceptación en formato Gherkin.</p>
+        <div class="section-stats">
+          <div class="stat-list">
+            <div class="stat-list-title">1 prompt estructurado</div>
+            <div class="stat-list-grid">
+              <div>Rol</div>
+              <div>Reglas (INVEST)</div>
+              <div>Entrada</div>
+              <div>Formato de salida</div>
+            </div>
+          </div>
+          <div class="stat-list">
+            <div class="stat-list-title">3 criterios Gherkin</div>
+            <div class="stat-list-grid">
+              <div>CA01 · Caso exitoso</div>
+              <div>CA03 · Permisos</div>
+              <div>CA02 · Stock insuficiente</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-dots">
+          <span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="6">
+      <div class="content-body tight">
+        <div class="content-eyebrow">6. Cómo usamos IA en el proceso</div>
+        <h2>Prompt → Historia de usuario</h2>
+        <div class="content-canvas">
+          <div class="ai-flow">
+
+            <div class="ai-panel">
+              <div class="ai-panel-title">💬 Prompt</div>
+              <div class="ai-prompt-box"><span class="ai-h">Rol:</span>
+Eres un Product Owner experto en Scrum. Tu función es transformar ideas breves en Historias de Usuario (HUs) de alta calidad listas para el Backlog.
+
+<span class="ai-h">Entrada:</span>
+- Título: [Título corto de la necesidad o funcionalidad]
+- Alcance: [Contexto, necesidad o resultado esperado]
+
+<span class="ai-h">Reglas y Procesos internos (Ejecuta antes de responder):</span>
+1. Validación INVEST: Verifica que la HU sea Independiente, Negociable, Valorable, Estimable, Pequeña y Probable.
+2. Aplicación de Slicing: Si el alcance es demasiado grande o complejo para un Sprint, divídelo en varias HUs independientes priorizadas por valor (evita dividir por capas técnicas). Si es acotado, genera una sola.
+3. Restricciones: No inventes detalles técnicos, arquitecturas, bases de datos ni tareas técnicas.
+
+<span class="ai-h">Formato de salida obligatorio:</span>
+
+Si se genera UNA sola Historia de Usuario:
+Título:
+[Nombre de la historia]
+
+Descripción:
+Yo como [usuario],
+quiero [acción o necesidad],
+para [beneficio o valor].
+
+Criterios de Aceptación (3 a 5):
+CA01: Dado [contexto], cuando [acción], entonces [resultado esperado].
+CA02: Dado [contexto], cuando [acción], entonces [resultado esperado].
+CA03: Dado [contexto], cuando [acción], entonces [resultado esperado].
+
+---
+
+Si se requiere Slicing (Múltiples Historias):
+Historia 1
+Título: [Nombre]
+Descripción: Yo como [usuario], quiero [acción], para [beneficio].
+Criterios de Aceptación:
+- CA01: Dado..., Cuando..., Entonces...
+- CA02: Dado..., Cuando..., Entonces...
+- CA03: Dado..., Cuando..., Entonces...
+
+Historia 2
+Título: [Nombre]
+Descripción: Yo como [usuario], quiero [acción], para [beneficio].
+Criterios de Aceptación:
+- CA01: Dado..., Cuando..., Entonces...
+- CA02: Dado..., Cuando..., Entonces...
+- CA03: Dado..., Cuando..., Entonces...
+
+(Entrega únicamente el resultado final siguiendo el formato solicitado).</div>
+            </div>
+
+            <div class="ai-arrow">→</div>
+
+            <div class="ai-panel">
+              <div class="ai-panel-title">✅ Resultado generado</div>
+              <div class="ai-result-box">
+                <div class="ai-usr-story"><b>Yo como:</b> Ejecutivo del área comercial<br><b>Deseo:</b> registrar una solicitud de planificación de la venta de la semana<br><b>Para:</b> que el área de producción inicie el proceso de elaboración de productos terminados.</div>
+                <div class="ai-criteria">
+                  <div class="ai-criteria-item"><b>CA01:</b> Dado el formulario "Registro de Planificación Semanal", cuando ingresa productos y cantidades válidas, entonces el sistema guarda la solicitud y confirma.</div>
+                  <div class="ai-criteria-item"><b>CA02:</b> Dado el mismo formulario, cuando la cantidad supera el stock actual, entonces el sistema muestra "stock insuficiente".</div>
+                  <div class="ai-criteria-item"><b>CA03:</b> Dado el mismo formulario, cuando revisa el botón "Crear solicitud de planificación", entonces el sistema lo muestra u oculta según los permisos del usuario.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN 7: CONCLUSIONES ============ -->
+    <section class="slide slide-section" data-section="7">
+      <div class="side-rail"><div class="rail-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="section-body">
+        <div class="eyebrow">Sección 7 de 7 · Ejemplo de proyecto real</div>
+        <h2>Conclusiones</h2>
+        <div class="section-icon">🎤</div>
+        <p class="lead">Cerramos con las decisiones que tomamos como equipo y lo que aprendimos priorizando un backlog real de producción industrial.</p>
+        <div class="section-stats">
+          <div class="stat-list">
+            <div class="stat-list-title">4 conclusiones clave</div>
+            <div class="stat-list-grid">
+              <div>1. Calidad al mismo nivel</div>
+              <div>3. Mapear errores antes</div>
+              <div>2. Historias independientes</div>
+              <div>4. Dashboards + app móvil</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-dots">
+          <span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide slide-content" data-section="7">
+      <div class="content-body">
+        <div class="content-eyebrow">7. Conclusiones</div>
+        <h2>Decisiones y aprendizajes del equipo</h2>
+        <div class="content-canvas">
+          <div class="check-list">
+            <div class="check-item"><div class="agenda-num" style="margin-top:1px;">1</div>Decisión clave: se priorizó el control de calidad (aprobar/rechazar masa y producto terminado) al mismo nivel que el registro de producción, no como una fase posterior.</div>
+            <div class="check-item"><div class="agenda-num" style="margin-top:1px;">2</div>Aprendizaje: separar dosimetría, masa y empaquetado en historias independientes, aunque comparten el mismo patrón de registro y pesos, facilitó estimar cada una por separado.</div>
+            <div class="check-item"><div class="agenda-num" style="margin-top:1px;">3</div>Qué harían diferente: mapear primero qué pasa si la balanza se desconecta o el peso registrado está fuera de tolerancia, antes de definir el MVP.</div>
+            <div class="check-item"><div class="agenda-num" style="margin-top:1px;">4</div>Próximos pasos: Sprint 2 incorporaría los dashboards de QlikSense (rendimiento y merma del producto terminado) y el aplicativo móvil para operarios de planta.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRACIAS -->
+    <section class="slide slide-thanks">
+      <h1>Gracias</h1>
+    </section>
+
+  </div>
+</div>
+
+<button class="nav-btn" id="prevBtn" aria-label="Anterior">&#10094;</button>
+<button class="nav-btn" id="nextBtn" aria-label="Siguiente">&#10095;</button>
+<div id="footerBar">
+  <div id="dotsNav"></div>
+  <div id="counter">1 / 18</div>
+</div>
+
+<script>
+(function(){
+  var slides = Array.from(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var current = 0;
+  var canvas = document.getElementById('canvas');
+  var dotsNav = document.getElementById('dotsNav');
+  var counter = document.getElementById('counter');
+
+  slides.forEach(function(_, i){
+    var b = document.createElement('button');
+    b.addEventListener('click', function(){ goTo(i); });
+    dotsNav.appendChild(b);
+  });
+
+  var treeDefs = {
+    1: { svg:'tree-svg-1', container:'imap-1', pairs:[
+      ['root1','a1'],['root1','a2'],['root1','a3'],['root1','a4'],
+      ['a1','n1a'],['a1','n1b'],['n1a','m1a'],['n1b','m1b'],
+      ['a2','n2a'],['a2','n2b'],['a2','n2c'],['n2a','m2a'],['n2b','m2b'],['n2c','m2c'],
+      ['a3','n3a'],['a3','n3b'],['n3a','m3a'],['n3b','m3b'],
+      ['a4','n4a'],['a4','n4b'],['n4a','m4a'],['n4b','m4b']
+    ]}
+  };
+
+  function drawTree(svgId, containerId, pairs){
+    var container = document.getElementById(containerId);
+    var svg = document.getElementById(svgId);
+    if (!container || !svg) return;
+    var cRect = container.getBoundingClientRect();
+    var scale = cRect.width / container.clientWidth || 1;
+    svg.setAttribute('viewBox', '0 0 ' + container.clientWidth + ' ' + container.clientHeight);
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var ns = 'http://www.w3.org/2000/svg';
+    pairs.forEach(function(p){
+      var a = document.getElementById(p[0]), b = document.getElementById(p[1]);
+      if (!a || !b) return;
+      var ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
+      var x1 = (ar.right - cRect.left) / scale, y1 = (ar.top + ar.height / 2 - cRect.top) / scale;
+      var x2 = (br.left - cRect.left) / scale, y2 = (br.top + br.height / 2 - cRect.top) / scale;
+      var mx = (x1 + x2) / 2;
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2);
+      path.setAttribute('class', 'tree-line');
+      svg.appendChild(path);
+    });
+  }
+
+  function render(){
+    slides.forEach(function(s, i){ s.classList.toggle('active', i === current); });
+    Array.from(dotsNav.children).forEach(function(b, i){ b.classList.toggle('active', i === current); });
+    counter.textContent = (current + 1) + ' / ' + total;
+    var treeKey = slides[current].getAttribute('data-tree');
+    if (treeKey && treeDefs[treeKey]) {
+      requestAnimationFrame(function(){ drawTree(treeDefs[treeKey].svg, treeDefs[treeKey].container, treeDefs[treeKey].pairs); });
+    }
+  }
+  function goTo(i){ current = Math.max(0, Math.min(total - 1, i)); render(); }
+  function next(){ goTo(current + 1); }
+  function prev(){ goTo(current - 1); }
+
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('prevBtn').addEventListener('click', prev);
+
+  window.addEventListener('keydown', function(e){
+    if (['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)) { next(); e.preventDefault(); }
+    else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)) { prev(); e.preventDefault(); }
+    else if (e.key === 'Home') { goTo(0); }
+    else if (e.key === 'End') { goTo(total - 1); }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  function fitCanvas(){
+    var scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720) * 0.94;
+    canvas.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('resize', fitCanvas);
+  fitCanvas();
+  render();
+})();
+</script>
+
+</body>
+</html>
